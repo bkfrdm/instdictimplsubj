@@ -1,40 +1,47 @@
-class meta(type):
-    def __new__(meta, classname, supers, classdict):
-        print('meta.__new__:', meta, classname, supers, classdict, sep='\n......... ')
-        return type.__new__(meta, classname, supers, classdict)
-    
-    def __init__(*args):
-        print('meta.__init_:', *args, sep='\n......... ')
-    
-    def __call__(Class, val):
-        global _val
-        _val = val
-        print('meta.__call__:', Class, val, sep='\n......... ')
-        D = {v: ord(v) for v in val}
-        class Sup(Tools, dict):
-            filename = _val
-            # callable instance / try filename to __init__ to get rid of global stmt
+class Meta(type):
+    def __call__(cls, *args):
+        print('Meta.__call__:', cls, args, sep='\n\t')
+        
+        data = cls.main(*args)
+        
+        new_cls = type(
+            cls.__name__,
+            cls.__bases__,
+            {k: v for k, v in cls.__dict__.items() if not k == '__init__'})
+        
+        instance = new_cls(data)
+        for n, v in zip(cls.__init__.__code__.co_names, args):
+            # __dict__ descriptor is broken -> TypeError
+            setattr(instance, n, v)
             
-        return type.__call__(Sup, D)
+        return instance
+
       
-class Tools:
-    def pops(self, *args):
-        poped = {}
-        for arg in args:
-            poped[arg] = self.pop(arg)
-        return poped
+class DictTools:
+    def pops(self, *keys):
+        return {key: self.pop(key) for key in keys}
 
     
-class C(metaclass=meta):
+class InstToDict(dict, DictTools, metaclass=Meta):
     def __init__(self, filename):
         self.filename = filename
+
+    @classmethod
+    def data_parser(cls, *args):
+        filename, = args
+        return {c: ord(c) for c in filename}
+
+    @classmethod
+    def main(cls, *args):
+        filename, = args
+        return cls.data_parser(filename)
 
 
 
 
 if __name__ == '__main__':
     filename = 'spam'
-    I = C(filename)
+    I = InstToDict(filename)
 
     print('-'*50, '\ndefined class instance returns dict object')
     
