@@ -14,6 +14,6 @@
     >>> i
     {'p': 112, 'm': 109}
 
-    # instance retains initialize values
+    # instance retains initialization values
     >>> i.filename                                        
     'spam'
