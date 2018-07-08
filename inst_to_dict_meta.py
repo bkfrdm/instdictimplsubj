@@ -1,4 +1,11 @@
 class MetaDict(type):
+    def __new__(meta, classname, supers, classdict):
+        for attr, val in classdict.items():
+            if not attr.startswith('__') and callable(val):
+                classdict[attr] = classmethod(val)
+
+        return type.__new__(meta, classname, supers, classdict)
+            
     def __call__(cls, *args):
         data = cls.main(*args)
         
@@ -29,12 +36,16 @@ class InstToDict(dict, DictToolsMix, metaclass=MetaDict):
     def __init__(self, filename):
         self.filename = filename
 
-    @classmethod
     def data_parser(cls, *args):
         filename, = args
         return {c: ord(c) for c in filename}
 
-    @classmethod
     def main(cls, *args):
         filename, = args
         return cls.data_parser(filename)
+
+
+
+if __name__ == '__main__':
+    i = InstToDict('spam')
+    print(i, type(i), isinstance(i, dict), sep='\n')
